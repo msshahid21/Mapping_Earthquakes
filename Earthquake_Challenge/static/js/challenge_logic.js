@@ -16,7 +16,7 @@ let satelliteStreets = L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/sate
 });
 
 // Create the map object with center, zoom level and default layer.
-let map = L.map('mapid', {
+let map = L.map('map', {
 	center: [40.7, -94.5],
 	zoom: 3,
 	layers: [streets]
@@ -30,11 +30,12 @@ let baseMaps = {
 
 // 1. Add a 2nd layer group for the tectonic plate data.
 let allEarthquakes = new L.LayerGroup();
-
+let tectonicPlates = new L.LayerGroup();
 
 // 2. Add a reference to the tectonic plates group to the overlays object.
 let overlays = {
-  "Earthquakes": allEarthquakes
+  "Earthquakes": allEarthquakes,
+  "Tectonic Plates": tectonicPlates
 };
 
 // Then we add a control to the map that will allow the user to change which
@@ -107,7 +108,9 @@ d3.json("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geoj
   // Then we add the earthquake layer to our map.
   allEarthquakes.addTo(map);
 
-  // Here we create a legend control object.
+});
+
+// Here we create a legend control object.
 let legend = L.control({
   position: "bottomright"
 });
@@ -126,7 +129,7 @@ legend.onAdd = function() {
     "#ea2c2c"
   ];
 
-// Looping through our intervals to generate a label with a colored square for each interval.
+  // Looping through our intervals to generate a label with a colored square for each interval.
   for (var i = 0; i < magnitudes.length; i++) {
     console.log(colors[i]);
     div.innerHTML +=
@@ -134,14 +137,27 @@ legend.onAdd = function() {
       magnitudes[i] + (magnitudes[i + 1] ? "&ndash;" + magnitudes[i + 1] + "<br>" : "+");
     }
     return div;
-  };
+};
 
-  // Finally, we our legend to the map.
-  legend.addTo(map);
+// Finally, we our legend to the map.
+legend.addTo(map);
 
 
-  // 3. Use d3.json to make a call to get our Tectonic Plate geoJSON data.
-  d3.json().then(() {
-    
-  });
+// 3. Use d3.json to make a call to get our Tectonic Plate geoJSON data.
+d3.json("https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB2002_boundaries.json").then(function (data) {
+  function styleInfo(feature) {
+    return {
+      color: "red",
+      weight: 1
+    }
+  }
+
+  L.geoJSON(data, {
+    style: styleInfo,
+    pointToLayer: function(feature, latlng) {
+      return L.polyLine(latlng);
+    }
+  }).addTo(tectonicPlates);
+
+  tectonicPlates.addTo(map);
 });
